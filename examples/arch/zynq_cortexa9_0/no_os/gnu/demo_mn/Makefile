@@ -77,13 +77,15 @@ BITSTREAM= download
 ##################################
 # Include directory
 INCLUDES=-I${APP_DIR} \
+-I${APP_DIR}/sd_fat16 \
 -I${STACK_ROOT}/include \
 -I${STACK_ROOT}/libs/hostif \
 -I${STACK_ROOT}/libs/sharedbuff \
 -I${STACK_ROOT}/stack/include/target/openmac \
 -I${STACK_ROOT}/stack/src \
 -I${STACK_ROOT}/objdicts/CiA302-4_MN \
--I$(BSP_PATH)/${PROCESSOR_NAME}/include
+-I$(BSP_PATH)/${PROCESSOR_NAME}/include \
+-I$(HW_SPEC)
 
 ##################################
 # Dependencies 
@@ -146,7 +148,10 @@ ${STACK_ROOT}/stack/src/user/sdo/sdo-comu.c \
 ${STACK_ROOT}/stack/src/user/cfmu.c \
 ${STACK_ROOT}/stack/src/user/ledu.c \
 ${APP_DIR}/systemComponents.c \
-${APP_DIR}/demo_main.c 
+${APP_DIR}/demo_main.c \
+${APP_DIR}/sd_fat16/ff.c \
+${APP_DIR}/sd_fat16/mmc.c \
+${APP_DIR}/sd_fat16/fs_sdcard.c 
 
 LIBRARIES = libxil.a
 

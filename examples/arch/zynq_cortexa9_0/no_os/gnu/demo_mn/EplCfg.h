@@ -144,6 +144,8 @@ The SDO defines determine the SDO stack configuration.
     ///< max. supported SDO command connections
 /**@}*/
 
+
+#define	EPL_CDC_ON_SD				TRUE
 //------------------------------------------------------------------------------
 // typedef
 //------------------------------------------------------------------------------

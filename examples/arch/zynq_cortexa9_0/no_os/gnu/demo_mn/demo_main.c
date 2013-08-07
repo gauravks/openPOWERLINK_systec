@@ -44,6 +44,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "xap.h"
 
+#if (EPL_CDC_ON_SD != FALSE)
+#include "fs_sdcard.h"
+#include "xstatus.h"
+#endif
 //============================================================================//
 //            G L O B A L   D E F I N I T I O N S                             //
 //============================================================================//
@@ -81,8 +85,6 @@ const BYTE abMacAddr[] = {0x00, 0x12, 0x34, 0x56, 0x78, NODEID};
 #define MAX_NODES               255
 
 //#define	SDO_TEST
-#define SDO_WRITE_TEST_COUNT	5000
-#define SDO_READ_TEST_COUNT		10000
 //------------------------------------------------------------------------------
 // local types
 //------------------------------------------------------------------------------
@@ -98,10 +100,19 @@ static BOOL fShutdown = FALSE;
 static PI_IN* pProcessImageIn_l;
 static PI_OUT* pProcessImageOut_l;
 
+#if (EPL_CDC_ON_SD != FALSE)
+
+static unsigned char *aCdcBuffer;
+static char* pszCdcFilename_g = "mnobd.cdc";
+static UINT32  uiCdcSize_l;
+
+#else
+
 static unsigned char aCdcBuffer[] =
 {
     #include "mnobd.txt"
 };
+#endif
 
 typedef struct
 {
@@ -122,13 +133,7 @@ static int                  iUsedNodeIds_g[] =
 };
 static unsigned int         uiCnt_g;
 static APP_NODE_VAR_T       nodeVar_g[MAX_NODES];
-#ifdef SDO_TEST
-static unsigned int         dw_le_CycleLen_g;
-static unsigned int         dw_SdoHandle_l;
-static unsigned int         dw_SdoHandle_l_1;
-static WORD                 data1;
-static WORD                 data2;
-#endif
+
 //------------------------------------------------------------------------------
 // local function prototypes
 //------------------------------------------------------------------------------
@@ -138,10 +143,10 @@ tEplKernel PUBLIC AppCbEvent(tEplApiEventType EventType_p,
 tEplKernel PUBLIC AppCbSync(void);
 tEplKernel PUBLIC AppInit(void);
 
-#ifdef SDO_TEST
-void PUBLIC AppSdoTestWrite(void);
-void PUBLIC AppSdoTestRead(void);
+#if (EPL_CDC_ON_SD != FALSE)
+tEplKernel AppGetCdc(void);
 #endif
+
 
 //============================================================================//
 //            P U B L I C   F U N C T I O N S                                 //
@@ -164,9 +169,6 @@ int  main (void)
     static tEplApiInitParam     EplApiInitParam;
     char*                       sHostname = HOSTNAME;
     int                         checkStack = 0;
-#ifdef SDO_TEST
-    int                         SendSdo = 0;
-#endif
 
     // Initialize target
     EplRet = target_init();
@@ -245,8 +247,17 @@ int  main (void)
         printf("ApiInit() failed!\n");
         goto Exit;
     }
+#if (EPL_CDC_ON_SD != FALSE)
+    EplRet = AppGetCdc();
+    if(EplRet != kEplSuccessful)
+    {
+        goto Exit;
+    }
 
+    EplRet = EplApiSetCdcBuffer(aCdcBuffer, uiCdcSize_l);
+#else
     EplRet = EplApiSetCdcBuffer(aCdcBuffer, sizeof(aCdcBuffer));
+#endif
     if(EplRet != kEplSuccessful)
     {
         goto Exit;
@@ -294,17 +305,6 @@ int  main (void)
             }
         }
 
-#ifdef SDO_TEST
-        if(SendSdo++ == SDO_WRITE_TEST_COUNT)
-        {
-        	AppSdoTestWrite();
-        }
-        else if(SendSdo++ >= SDO_READ_TEST_COUNT)
-        {
-        	SendSdo = 0;
-        	AppSdoTestRead();
-        }
-#endif
     }
 
 ExitShutdown:
@@ -737,3 +737,74 @@ tEplKernel PUBLIC AppCbSync(void)
 
     return EplRet;
 }
+//------------------------------------------------------------------------------
+/**
+\brief    Read CDC from SD
+
+This function is used to read CDC file from a SD CARD
+
+\return The function returns a tEplKernel error code.
+
+\ingroup module_demo
+*/
+//------------------------------------------------------------------------------
+#if (EPL_CDC_ON_SD != FALSE)
+tEplKernel AppGetCdc(void)
+{
+    tEplKernel  tRet = kEplSuccessful;
+    INT         iRet = 0;
+    UINT        iCdcSize;
+    UINT        iReadSize;
+    FIL         fFile;
+
+    /* Flush the Caches */
+    Xil_DCacheFlush();
+
+    /* Disable Data Cache */
+    Xil_DCacheDisable();
+
+    iRet = sd_fs_init();
+    if(iRet != XST_SUCCESS)
+    {
+       // error occurred
+       printf("%s Error Initializing SD Card \n",__func__);
+       tRet = kEplNoResource;
+       goto Exit;
+    }
+
+    iRet = sd_open(&fFile, pszCdcFilename_g, FA_READ);
+    if(iRet != XST_SUCCESS){
+       // error occurred
+        printf("%s Error opening file \n",__func__);
+        tRet = kEplNoResource;
+        goto Exit;
+    }
+
+    iCdcSize = sd_get_fsize(&fFile);
+    uiCdcSize_l = iCdcSize;
+    printf("CDC file size %d\n", uiCdcSize_l);
+
+    aCdcBuffer = malloc(uiCdcSize_l);
+    if(aCdcBuffer == NULL)
+    {
+        printf("Memory Allocation failed for CDC\n");
+        tRet = kEplNoResource;
+        goto Exit;
+    }
+
+    iRet = sd_read(&fFile, aCdcBuffer, iCdcSize, &iReadSize);
+    if (iReadSize != iCdcSize || iRet != XST_SUCCESS)
+    {
+        printf("%s CDC Read failed \n",__func__);
+        tRet = kEplNoResource;
+        goto Exit;
+    }
+
+    sd_close(&fFile);
+
+Exit:
+
+    Xil_DCacheEnable();
+    return tRet;
+}
+#endif /* (EPL_CDC_ON_SD != FALSE) */
