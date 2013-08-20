@@ -17,7 +17,7 @@ _HEAP_SIZE = DEFINED(_HEAP_SIZE) ? _HEAP_SIZE : 0xA00000;
 
 MEMORY
 {
-   ps7_ddr_0_S_AXI_HP0_BASEADDR : ORIGIN = 0x30000050, LENGTH = 0x3FFFFFB0
+   ps7_ddr_0_S_AXI_HP0_BASEADDR : ORIGIN = 0x30000050, LENGTH = 0x0FFFFFAF
 }
 
 /* Specify the default entry point to the program */
