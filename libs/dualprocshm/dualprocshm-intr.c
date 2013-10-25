@@ -8,7 +8,7 @@ This file contains implementation of interrupt handling for dual processor libra
 
 Interrupt handling support for interrupts from single processor is only supported
 till now.
-//TODO add description
+
 \ingroup module_dualprocshm
 *******************************************************************************/
 /*------------------------------------------------------------------------------
@@ -83,8 +83,8 @@ typedef struct sDualProcShmIntrReg
 
 typedef struct
 {
-    tTargetIrqCb apfnIrqCb[TARGET_MAX_INTERRUPTS];  ///< User applications interrupt callbacks
-    tDualProcShmIntrReg   *intrReg;                 ///< Pointer to interrupt reg
+    tTargetIrqCb           apfnIrqCb[TARGET_MAX_INTERRUPTS];  ///< User applications interrupt callbacks
+    tDualProcShmIntrReg   *intrReg;                           ///< Pointer to interrupt reg
 
 }tDualProcShmIntrInst;
 
@@ -102,7 +102,7 @@ typedef struct
 //------------------------------------------------------------------------------
 // local vars
 //------------------------------------------------------------------------------
-tDualProcShmIntrInst  intrInst;
+tDualProcShmIntrInst  intrInst_l;
 
 
 //------------------------------------------------------------------------------
@@ -117,8 +117,8 @@ static void targetInterruptHandler ( void* pArg_p );
 The function registers the common platform interrupt handler and enable the
 interrupts
 
-\param  irqId_p        interrupt id.
-\param  pfnIrqHandler_p  interrupt handler
+\param  irqId_p          Interrupt id.
+\param  pfnIrqHandler_p  Interrupt handler
 
 \return The function returns a tDualprocReturn Error code.
 
@@ -133,7 +133,7 @@ tDualprocReturn dualprocshm_initInterrupts(tDualprocDrvInstance pInstance_p)
     if(pInstance_p == NULL )
        return kDualprocInvalidParameter;
 
-    intrInst.intrReg = (tDualProcShmIntrReg*)(pDrvInst->pCommMemBase + MAX_COMMON_MEM_SIZE);
+    intrInst_l.intrReg = (tDualProcShmIntrReg*)(pDrvInst->pCommMemBase + MAX_COMMON_MEM_SIZE);
 
     if(target_regSyncIrqHdl(targetInterruptHandler, (void*)pInstance_p) != 0)
     {
@@ -147,7 +147,33 @@ tDualprocReturn dualprocshm_initInterrupts(tDualprocDrvInstance pInstance_p)
 Exit:
     return ret;
 }
+//------------------------------------------------------------------------------
+/**
+\brief  Free Interrupts for the platform
 
+The function frees the interrupts registered before
+
+\param  irqId_p          Interrupt id.
+\param  pfnIrqHandler_p  Interrupt handler
+
+\return The function returns a tDualprocReturn Error code.
+
+\ingroup module_dualprocshm
+*/
+//------------------------------------------------------------------------------
+tDualprocReturn dualprocshm_freeInterrupts(tDualprocDrvInstance pInstance_p)
+{
+	tDualProcDrv    *pDrvInst = (tDualProcDrv*) pInstance_p;
+
+    if(pInstance_p == NULL )
+       return kDualprocInvalidParameter;
+
+    target_enableSyncIrq(FALSE);
+    target_regSyncIrqHdl(NULL, NULL);
+
+    intrInst_l.intrReg = NULL;
+    return kDualprocSuccessful;
+}
 //------------------------------------------------------------------------------
 /**
 \brief  Register interrupt handler
@@ -171,16 +197,19 @@ tDualprocReturn dualprocshm_registerHandler(tDualprocDrvInstance pInstance_p,
     if(irqId_p > TARGET_MAX_INTERRUPTS || pInstance_p == NULL )
         return kDualprocInvalidParameter;
 
-    irqEnableVal = DPSHM_READ16(&intrInst.intrReg->irqEnable);
+    if(intrInst_l.intrReg == NULL)
+    	return kDualprocNoResource;
+
+    irqEnableVal = DPSHM_READ16(&intrInst_l.intrReg->irqEnable);
 
     if(pfnIrqHandler_p != NULL)
         irqEnableVal |= (1 << irqId_p);
     else
         irqEnableVal &= ~(1 << irqId_p);
 
-    intrInst.apfnIrqCb[irqId_p] = (tTargetIrqCb)pfnIrqHandler_p;
+    intrInst_l.apfnIrqCb[irqId_p] = (tTargetIrqCb)pfnIrqHandler_p;
 
-    DPSHM_WRITE16(&intrInst.intrReg->irqEnable, irqEnableVal);
+    DPSHM_WRITE16(&intrInst_l.intrReg->irqEnable, irqEnableVal);
 
     return kDualprocSuccessful;
 }
@@ -207,14 +236,17 @@ tDualprocReturn dualprocshm_enableIrq(tDualprocDrvInstance pInstance_p, \
     if(irqId_p > TARGET_MAX_INTERRUPTS || pInstance_p == NULL )
         return kDualprocInvalidParameter;
 
-    irqEnableVal = DPSHM_READ16(&intrInst.intrReg->irqEnable);
+    if(intrInst_l.intrReg == NULL)
+    	return kDualprocNoResource;
+
+    irqEnableVal = DPSHM_READ16(&intrInst_l.intrReg->irqEnable);
 
     if(fEnable_p)
         irqEnableVal |= (1 << irqId_p);
     else
         irqEnableVal &= ~(1 << irqId_p);
 
-    DPSHM_WRITE16(&intrInst.intrReg->irqEnable, irqEnableVal);
+    DPSHM_WRITE16(&intrInst_l.intrReg->irqEnable, irqEnableVal);
 
     return kDualprocSuccessful;
 }
@@ -241,18 +273,21 @@ tDualprocReturn dualprocshm_setIrq(tDualprocDrvInstance pInstance_p, UINT8 irqId
     if(irqId_p > TARGET_MAX_INTERRUPTS || pInstance_p == NULL)
         return kDualprocInvalidParameter;
 
-    irqEnable = DPSHM_READ16(&intrInst.intrReg->irqEnable);
+    if(intrInst_l.intrReg == NULL)
+    	return kDualprocNoResource;
+
+    irqEnable = DPSHM_READ16(&intrInst_l.intrReg->irqEnable);
 
     if(irqEnable & (1 << irqId_p))
     {
-        irqActive = DPSHM_READ16(&intrInst.intrReg->irqSet);
+        irqActive = DPSHM_READ16(&intrInst_l.intrReg->irqSet);
 
         if(fSet_p)
             irqActive |= (1 << irqId_p);
         else
             irqActive &= ~(1 << irqId_p);
 
-        DPSHM_WRITE16(&intrInst.intrReg->irqSet,irqActive);
+        DPSHM_WRITE16(&intrInst_l.intrReg->irqSet,irqActive);
     }
 
     return kDualprocSuccessful;
@@ -272,6 +307,8 @@ dualprocshm_registerHandler().
 
 \param  pArg_p                  The system caller should provide the control module
                                 instance with this parameter.
+
+\ingroup module_dualprocshm
 */
 //------------------------------------------------------------------------------
 static void targetInterruptHandler ( void* pArg_p )
@@ -282,7 +319,10 @@ static void targetInterruptHandler ( void* pArg_p )
 
     UNUSED_PARAMETER(pArg_p);
 
-    pendings = DPSHM_READ16(&intrInst.intrReg->irqPending);
+    if(intrInst_l.intrReg == NULL)
+      return;
+
+    pendings = DPSHM_READ16(&intrInst_l.intrReg->irqPending);
 
     for(i=0; i < TARGET_MAX_INTERRUPTS; i++)
     {
@@ -292,12 +332,12 @@ static void targetInterruptHandler ( void* pArg_p )
         if(pendings & mask)
         {
             pendings &= ~mask;
-            DPSHM_WRITE16(&intrInst.intrReg->irqAck,pendings);
+            DPSHM_WRITE16(&intrInst_l.intrReg->irqAck,pendings);
         }
 
         // then try to execute the callback
-        if(intrInst.apfnIrqCb[i] != NULL)
-            intrInst.apfnIrqCb[i]();
+        if(intrInst_l.apfnIrqCb[i] != NULL)
+            intrInst_l.apfnIrqCb[i]();
     }
 
 }

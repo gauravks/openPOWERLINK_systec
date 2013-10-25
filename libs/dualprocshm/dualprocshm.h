@@ -189,6 +189,7 @@ tDualprocReturn dualprocshm_acquireBuffLock(tDualprocDrvInstance pInstance_p, UI
 tDualprocReturn dualprocshm_releaseBuffLock(tDualprocDrvInstance pInstance_p, UINT8 Id_p);
 
 tDualprocReturn dualprocshm_initInterrupts(tDualprocDrvInstance pInstance_p);
+tDualprocReturn dualprocshm_freeInterrupts(tDualprocDrvInstance pInstance_p);
 tDualprocReturn dualprocshm_registerHandler(tDualprocDrvInstance pInstance_p,
                                             UINT8 irqId_p,void* pfnIrqHandler_p);
 tDualprocReturn dualprocshm_enableIrq(tDualprocDrvInstance pInstance_p, \
