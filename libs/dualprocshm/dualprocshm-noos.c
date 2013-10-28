@@ -145,7 +145,6 @@ tDualprocReturn dualprocshm_create (tDualprocConfig *pConfig_p, tDualprocDrvInst
     int              iIndex;
     if(pConfig_p->ProcInstance != kDualProcFirst && pConfig_p->ProcInstance != kDualProcSecond )
     {
-        //TRACE("Inst %x\n",pConfig_p->ProcInstance);
         return kDualprocInvalidParameter;
     }
 

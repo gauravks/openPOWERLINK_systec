@@ -203,9 +203,7 @@ void ctrlucal_exit (void)
     instance_l.fIrqMasterEnable =  FALSE;
 
     // disable system irq
-    target_enableSyncIrq(FALSE);
-    target_regSyncIrqHdl(NULL, NULL);
-
+    dualprocshm_freeInterrupts(instance_l.dualProcDrvInst);
 
     dualRet = dualprocshm_freeMemory(instance_l.dualProcDrvInst,DUALPROCSHM_DYNBUFF_ID,FALSE);
     if(dualRet != kDualprocSuccessful)

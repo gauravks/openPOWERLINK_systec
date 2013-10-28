@@ -147,7 +147,7 @@
         #undef BENCHMARK_MODULES
         #define BENCHMARK_MODULES           0x00000000
     #endif
-#elif (TARGET_SYSTEM == _NO_OS_) && (DEV_SYSTEM == _DEV_ARM_)//TODO:@John: to be ported
+#elif (TARGET_SYSTEM == _NO_OS_) && (DEV_SYSTEM == _DEV_ARM_)
 
     #include "xparameters.h"
 

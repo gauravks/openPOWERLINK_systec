@@ -336,7 +336,6 @@ tCircBufError circbuf_writeData (tCircBufInstance* pInstance_p, const void* pDat
 
         pHeader->writeOffset = blockSize - chunkSize;
     }
-
     pHeader->freeSize -= fullBlockSize;
     pHeader->dataCount++;
 
@@ -397,8 +396,6 @@ tCircBufError circbuf_writeMultipleData(tCircBufInstance* pInstance_p,
     if (fullBlockSize > pHeader->freeSize)
     {
         circbuf_unlock(pInstance_p);
-
-        printf("fullBlockSize > pHeader->freeSize\n");
         return kCircBufOutOfMem;
     }
 
@@ -453,14 +450,12 @@ tCircBufError circbuf_writeMultipleData(tCircBufInstance* pInstance_p,
         pHeader->writeOffset = blockSize - chunkSize;
 
     }
-
     pHeader->freeSize -= fullBlockSize;
     pHeader->dataCount++;
 
     TARGET_FLUSH_DCACHE(pHeader,sizeof(tCircBufHeader));
 
     circbuf_unlock(pInstance_p);
-
     if (pInstance_p->pfnSigCb != NULL)
     {
         pInstance_p->pfnSigCb();
@@ -519,7 +514,6 @@ tCircBufError circbuf_readData(tCircBufInstance* pInstance_p, void* pData_p,
             return kCircBufReadsizeTooSmall;
     }
 
-
     if (pHeader->readOffset + fullBlockSize <= pHeader->bufferSize)
     {
         TARGET_INVALIDATE_DCACHE((pCircBuf + pHeader->readOffset + sizeof(UINT32)) \
@@ -534,7 +528,6 @@ tCircBufError circbuf_readData(tCircBufInstance* pInstance_p, void* pData_p,
     else
     {
         chunkSize = pHeader->bufferSize - pHeader->readOffset - sizeof(UINT32);
-
         TARGET_INVALIDATE_DCACHE((pCircBuf + pHeader->readOffset + sizeof(UINT32)), \
                                     chunkSize);
         memcpy (pData_p, (pCircBuf + pHeader->readOffset + sizeof(UINT32)),
@@ -543,13 +536,10 @@ tCircBufError circbuf_readData(tCircBufInstance* pInstance_p, void* pData_p,
         TARGET_INVALIDATE_DCACHE(pCircBuf, dataSize - chunkSize);
 
         memcpy ((UINT8*)pData_p + chunkSize, pCircBuf, dataSize - chunkSize);
-
         pHeader->readOffset = blockSize - chunkSize;
     }
-
     pHeader->freeSize += fullBlockSize;
     pHeader->dataCount--;
-
 
     TARGET_FLUSH_DCACHE(pHeader,sizeof(tCircBufHeader));
 
