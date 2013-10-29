@@ -29,7 +29,7 @@ exchange between User and Kernel layers.
 
 - Zynq 702 Eval board KIT
 - Avnet FMC Ethernet Connector [Connect this to FMC 1 of Board] 
-- Xilinx ISE Design Suite Embeded Edition 14.4.
+- Xilinx ISE Design Suite Embeded Edition 14.6.
 
 **NOTE**: Steps for Creating First stage Boot loader for AMP processors may not be \
           valid in case of higher ISE versions.

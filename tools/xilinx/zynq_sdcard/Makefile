@@ -1,13 +1,12 @@
-#  (c) Bernecker + Rainer Industrie-Elektronik Ges.m.b.H.
-#      A-5142 Eggelsberg, B&R Strasse 1
-#      www.br-automation.com
+#  (c) Kalycito Infotech Private Ltd.
+#      www.kalycito.com
 #
-# Project       : POWERLINK Xilinx Examples
-# Module        : Makefile generation
-# Autor         : mairt
-# Date          : 13.02.2012
+# Project       : POWERLINK Zynq Example
+# Module        : SD Card generation
+# Autor         : vinod
+# Date          : 23.09.2013
 # File          : Makefile
-# contents      : Creates the Makefile in the design folder of the example.
+# contents      : Generates the BOOT.bin for Zynq.
 ################################################################################
 
 

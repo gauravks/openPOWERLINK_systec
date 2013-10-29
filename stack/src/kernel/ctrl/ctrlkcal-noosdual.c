@@ -167,6 +167,15 @@ tEplKernel ctrlkcal_init (void)
         ret = kEplNoResource;
         goto Exit;
     }
+
+    dualRet = dualprocshm_initInterrupts(instance_l.dualProcDrvInst);
+    if(dualRet != kDualprocSuccessful)
+    {
+        EPL_DBGLVL_ERROR_TRACE("{%s} Error Initializing interrupts %x\n ",__func__,dualRet);
+        ret = kEplNoResource;
+        goto Exit;
+    }
+
     magic = CTRL_MAGIC;
     dualRet = dualprocshm_writeDataCommon(instance_l.dualProcDrvInst,offsetof(tCtrlBuff,magic), \
                                           sizeof(magic),(UINT8 *)&magic);
