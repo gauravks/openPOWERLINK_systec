@@ -1212,7 +1212,7 @@ tEplKernel dllk_setupLocalNode(tNmtState nmtState_p)
     {
         if ((ret = dllk_setupLocalNodeCn()) != kEplSuccessful)
             return ret;
-        if ((ret = errsigk_createErrStatusBuffers(dllkInstance_g.pCurrentErrStatusBuffer)) != kEplSuccessful)
+        if ((ret = errsigk_createErrStatusBuffers(&dllkInstance_g.pCurrentErrStatusBuffer)) != kEplSuccessful)
                 return ret;
     }
 #else
@@ -1532,7 +1532,7 @@ tEplKernel dllk_cleanupLocalNode(tNmtState oldNmtState_p)
 #if defined(CONFIG_INCLUDE_NMT_MN)
     if (oldNmtState_p < kNmtMsNotActive)
     {
-        if ((ret = errsigk_cleanErrStatusBuffers(dllkInstance_g.pCurrentErrStatusBuffer)) != kEplSuccessful)
+        if ((ret = errsigk_cleanErrStatusBuffers(&dllkInstance_g.pCurrentErrStatusBuffer)) != kEplSuccessful)
                 return ret;
     }
 #else

@@ -48,7 +48,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <errhnd.h>
 #include <kernel/errhndk.h>
-
+#include <Epl.h>
 #include "errhndkcal.h"
 
 #include "kernel/errsigk.h"
@@ -167,7 +167,7 @@ tEplKernel errsigk_exit(void)
     //TODO: Reset Error queue and error objects: requires posting event to user side.
     if (instance_l.m_Status != kNoBuffer)
     {
-        if((ret = errsigk_deAllocateErrStatusBuffers()) != kEplSuccessful)
+        if((ret = freeErrStatusBuffers()) != kEplSuccessful)
         {
             goto Exit;
         }
@@ -301,7 +301,7 @@ static tEplKernel allocateErrStatusBuffers(void)
         goto Exit;
     }
 	
-	EPL_MEMSET(currentErrSigkBuffer,0);
+	EPL_MEMSET(currentErrSigkBuffer,0,sizeof(tErrSigkBuffer));
     
     currentErrSigkBuffer->m_uiOwner = kOwnerReserved;
     instance_l.m_pReservedErrorBuffer = currentErrSigkBuffer;
@@ -316,7 +316,7 @@ static tEplKernel allocateErrStatusBuffers(void)
             break;
         }
 		
-		EPL_MEMSET(currentErrSigkBuffer,0);
+		EPL_MEMSET(currentErrSigkBuffer,0,sizeof (tErrSigkBuffer));
         currentErrSigkBuffer->m_uiOwner = kOwnerErrSigk;
         if (loopCount == 1)
         {
@@ -332,7 +332,7 @@ static tEplKernel allocateErrStatusBuffers(void)
             previousErrSigkBuffer->m_pNextErrorBuffer = currentErrSigkBuffer;
         }
         previousErrSigkBuffer = currentErrSigkBuffer;
-        printf("ErrBufs: #%d- %x\n", loopCount, currentErrSigkBuffer);
+       // printf("ErrBufs: #%d- %x\n", loopCount, currentErrSigkBuffer);
     }
 
 Exit:
@@ -366,7 +366,6 @@ static tEplKernel freeErrStatusBuffers(void)
 
     if (currentErrSigkBuffer != NULL)
     {
-       ret = errsigk_deallocateStatusEntryQueue(currentErrSigkBuffer);
        EPL_FREE(currentErrSigkBuffer);
     }
     instance_l.m_pReservedErrorBuffer = NULL;
@@ -384,7 +383,6 @@ static tEplKernel freeErrStatusBuffers(void)
 
         if (currentErrSigkBuffer != NULL)
         {
-           ret = errsigk_deallocateStatusEntryQueue(currentErrSigkBuffer);
            EPL_FREE(currentErrSigkBuffer);
         }
         currentErrSigkBuffer = nextErrSigkBuffer;
